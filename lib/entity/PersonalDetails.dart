@@ -1,7 +1,8 @@
 import 'package:floor/floor.dart';
 import 'package:flutter/material.dart';
 
-@entity
+
+@Entity(tableName: 'UserDetails')
 class PersonalDetails {
   @primaryKey
   final int id;

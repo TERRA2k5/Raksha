@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
     _loadPersonalData();
   }
   Future<void> _loadPersonalData() async {
-    personalData = (await repository..getPerson()) as PersonalDetails;
+    personalData = (await repository.getPerson());
     setState(() {});
   }
 

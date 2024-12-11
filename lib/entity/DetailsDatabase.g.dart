@@ -96,7 +96,7 @@ class _$DetailsDatabase extends DetailsDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `PersonalDetails` (`id` INTEGER NOT NULL, `age` INTEGER, `height` INTEGER, `weight` INTEGER, `medicalnotes` TEXT, `allergies` TEXT, `medicines` TEXT, `name` TEXT, `DOB` TEXT, `address` TEXT, `bloodgrp` TEXT, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `UserDetails` (`id` INTEGER NOT NULL, `age` INTEGER, `height` INTEGER, `weight` INTEGER, `medicalnotes` TEXT, `allergies` TEXT, `medicines` TEXT, `name` TEXT, `DOB` TEXT, `address` TEXT, `bloodgrp` TEXT, PRIMARY KEY (`id`))');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -117,7 +117,7 @@ class _$DetailsDAO extends DetailsDAO {
   )   : _queryAdapter = QueryAdapter(database),
         _personalDetailsInsertionAdapter = InsertionAdapter(
             database,
-            'PersonalDetails',
+            'UserDetails',
             (PersonalDetails item) => <String, Object?>{
                   'id': item.id,
                   'age': item.age,
