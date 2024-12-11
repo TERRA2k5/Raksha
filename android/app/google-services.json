@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "729830006853",
+    "project_id": "raksha-301e5",
+    "storage_bucket": "raksha-301e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:729830006853:android:e2f6f2726718910b75c32c",
+        "android_client_info": {
+          "package_name": "com.example.raksha"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUrd5JJ14Z8K9eAX17qqoE1r3aMOUe-Oc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
