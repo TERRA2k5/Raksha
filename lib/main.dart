@@ -1,3 +1,4 @@
+import 'package:Raksha/Contacts.dart';
 import 'package:Raksha/Details.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,7 @@ class AuthHandler extends StatelessWidget {
           return HomePage();
         }
         return const SignUp();
+        // return Contacts();
       },
     );
   }

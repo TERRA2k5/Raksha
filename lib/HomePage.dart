@@ -1,4 +1,4 @@
-import 'package:Raksha/entity/PersonalDetails.dart';
+import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

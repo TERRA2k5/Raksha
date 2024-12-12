@@ -11,3 +11,13 @@ class PersonalDetails {
 
   PersonalDetails(this.id, this.name , this.age , this.DOB , this.height, this.weight , this.address , this.allergies, this.medicalnotes, this.medicines, this.bloodgrp);
 }
+
+@Entity(tableName: 'EmergencyContacts')
+class EmergencyContact {
+  @PrimaryKey(autoGenerate: true)
+  final int? id;
+  final String contactName;
+  final String phoneNumber;
+
+  EmergencyContact(this.id, this.contactName, this.phoneNumber);
+}

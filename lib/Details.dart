@@ -1,8 +1,9 @@
 import 'package:Raksha/HomePage.dart';
-import 'package:Raksha/entity/DetailsDatabase.dart';
-import 'package:Raksha/entity/PersonalDetails.dart';
+import 'package:Raksha/entity/Database.dart';
+import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:flutter/material.dart';
+import 'Contacts.dart';
 import 'services/firebase_auth.dart';
 
 class Details extends StatefulWidget {
@@ -160,9 +161,9 @@ class _DetailState extends State<Details> {
                     );
                   } else {
                     repository.insertPerson(name, age, dob, height, weight, address, allergies, medicalnotes, medicines, bloodgrp);
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
+                      MaterialPageRoute(builder: (context) => Contacts()),
                     );
                   }
                 },

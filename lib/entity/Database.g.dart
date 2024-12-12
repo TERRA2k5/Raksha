@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'DetailsDatabase.dart';
+part of 'Database.dart';
 
 // **************************************************************************
 // FloorGenerator
@@ -74,6 +74,8 @@ class _$DetailsDatabase extends DetailsDatabase {
 
   DetailsDAO? _userDetailsDaoInstance;
 
+  EmergencyContactsDao? _emergencyContactsDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
@@ -97,6 +99,8 @@ class _$DetailsDatabase extends DetailsDatabase {
       onCreate: (database, version) async {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `UserDetails` (`id` INTEGER NOT NULL, `age` INTEGER, `height` INTEGER, `weight` INTEGER, `medicalnotes` TEXT, `allergies` TEXT, `medicines` TEXT, `name` TEXT, `DOB` TEXT, `address` TEXT, `bloodgrp` TEXT, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `EmergencyContacts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `contactName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -107,6 +111,12 @@ class _$DetailsDatabase extends DetailsDatabase {
   @override
   DetailsDAO get userDetailsDao {
     return _userDetailsDaoInstance ??= _$DetailsDAO(database, changeListener);
+  }
+
+  @override
+  EmergencyContactsDao get emergencyContactsDao {
+    return _emergencyContactsDaoInstance ??=
+        _$EmergencyContactsDao(database, changeListener);
   }
 }
 
@@ -168,5 +178,50 @@ class _$DetailsDAO extends DetailsDAO {
   Future<void> insertOrUpdateUser(PersonalDetails userDetails) async {
     await _personalDetailsInsertionAdapter.insert(
         userDetails, OnConflictStrategy.replace);
+  }
+}
+
+class _$EmergencyContactsDao extends EmergencyContactsDao {
+  _$EmergencyContactsDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _emergencyContactInsertionAdapter = InsertionAdapter(
+            database,
+            'EmergencyContacts',
+            (EmergencyContact item) => <String, Object?>{
+                  'id': item.id,
+                  'contactName': item.contactName,
+                  'phoneNumber': item.phoneNumber
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<EmergencyContact> _emergencyContactInsertionAdapter;
+
+  @override
+  Future<void> deleteContact(int id) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM EmergencyContacts WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<EmergencyContact>> getAllEmergencyContacts() async {
+    return _queryAdapter.queryList('SELECT * FROM EmergencyContacts',
+        mapper: (Map<String, Object?> row) => EmergencyContact(
+            row['id'] as int?,
+            row['contactName'] as String,
+            row['phoneNumber'] as String));
+  }
+
+  @override
+  Future<void> insertEmergencyContact(EmergencyContact contact) async {
+    await _emergencyContactInsertionAdapter.insert(
+        contact, OnConflictStrategy.replace);
   }
 }

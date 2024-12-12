@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import '../entity/DetailsDatabase.dart';
-import '../entity/PersonalDetails.dart';
+import '../entity/Database.dart';
+import '../entity/Model.dart';
 
 class FloorRepository{
 
@@ -25,7 +25,7 @@ class FloorRepository{
       await personDao.insertOrUpdateUser(person);
     }
     catch(e){
-      Fluttertoast.showToast(msg: 'Something went wrong');
+      Fluttertoast.showToast(msg: 'Saving Details Failed $e');
     }
   }
 
@@ -37,9 +37,49 @@ class FloorRepository{
       personData = await personDao.getUserDetails(1);  // Await the future
       return personData;
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Something went wrong');
+      Fluttertoast.showToast(msg: 'Fetching Details Failed $e');
       return null;
     }
   }
 
+  Future<void> insertContact(
+      String name,
+      String phone
+      ) async {
+    try {
+      final database = await $FloorDetailsDatabase.databaseBuilder(
+          'app_database.db').build();
+      final contactDAO = database.emergencyContactsDao;
+      final contact = EmergencyContact(null, name, phone);
+      await contactDAO.insertEmergencyContact(contact);
+    }
+    catch (e) {
+      Fluttertoast.showToast(msg: 'Saving Contact Failed $e');
+    }
+  }
+
+  Future<List<EmergencyContact>?> getContacts() async {
+    final List<EmergencyContact>? contacts;
+    try {
+      final database = await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
+      final contactDAO = database.emergencyContactsDao;
+      contacts = await contactDAO.getAllEmergencyContacts();
+      return contacts;
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Fetching Details Failed $e');
+      return [];
+    }
+  }
+
+  Future<void> deleteContact(int? id) async {
+    try {
+      final database =
+      await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
+      final contactDao = database.emergencyContactsDao;
+
+      await contactDao.deleteContact(id!);
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error deleting contact $e');
+    }
+  }
 }
