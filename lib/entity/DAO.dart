@@ -22,6 +22,9 @@ abstract class EmergencyContactsDao {
   @Query('DELETE FROM EmergencyContacts WHERE id = :id')
   Future<void> deleteContact(int id);
 
+  @Query('SELECT * FROM EmergencyContacts WHERE isPrimary = 1')
+  Future<EmergencyContact?> getPrimaryContact();
+
   @Query('SELECT * FROM EmergencyContacts')
   Future<List<EmergencyContact>> getAllEmergencyContacts();
 }

@@ -21,7 +21,7 @@ class FloorRepository{
     try{
       final database = await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
       final personDao = database.userDetailsDao;
-      final person = PersonalDetails(1, name, age.hashCode, DOB, height.hashCode, weight.hashCode, address, allergies, medicalnotes, medicines, bloodgrp);
+      final person = PersonalDetails(1, name, int.parse(age!), DOB, int.parse(height!), int.parse(weight!), address, allergies, medicalnotes, medicines, bloodgrp);
       await personDao.insertOrUpdateUser(person);
     }
     catch(e){
@@ -44,13 +44,14 @@ class FloorRepository{
 
   Future<void> insertContact(
       String name,
-      String phone
+      String phone,
+      bool isPrimary,
       ) async {
     try {
       final database = await $FloorDetailsDatabase.databaseBuilder(
           'app_database.db').build();
       final contactDAO = database.emergencyContactsDao;
-      final contact = EmergencyContact(null, name, phone);
+      final contact = EmergencyContact(null, name, phone , isPrimary);
       await contactDAO.insertEmergencyContact(contact);
     }
     catch (e) {
@@ -68,6 +69,19 @@ class FloorRepository{
     } catch (e) {
       Fluttertoast.showToast(msg: 'Fetching Details Failed $e');
       return [];
+    }
+  }
+
+  Future<EmergencyContact?> getPrimary() async {
+    try{
+      final database = await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
+      final contactDAO = database.emergencyContactsDao;
+      EmergencyContact? primaryContact = await contactDAO.getPrimaryContact();
+      return primaryContact;
+    }
+    catch(e){
+      Fluttertoast.showToast(msg: 'Fetching Primary Failed $e');
+      return null;
     }
   }
 

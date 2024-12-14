@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+import 'Profile.dart';
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -12,6 +14,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isCrisisAlertEnabled = false;
   final currentUser = FirebaseAuth.instance.currentUser;
+  int currentIndex = 0;
   // final userName = FirebaseAuth.instance.currentUser?.displayName ?? 'Guest';
   final repository = FloorRepository();
   PersonalDetails? personalData;
@@ -108,6 +111,14 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         backgroundColor: Colors.grey[200],
+        onTap: (index){
+            if(index != 0){
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => Profile()),
+              );
+            }
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile")

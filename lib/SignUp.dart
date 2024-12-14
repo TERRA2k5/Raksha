@@ -84,15 +84,11 @@ class SignUp extends StatelessWidget {
                     onPressed: () {
                       // print('object');
                       AuthService().createUser(
+                          context,
                           emailController.text,
                           passwordController.text,
                           confPasswordController.text,
                           nameController.text);
-
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => Details()),
-                      );
                     },
                     child: const Padding(
                         padding: EdgeInsets.all(16), child: Text("Sign Up"))

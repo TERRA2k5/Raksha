@@ -1,3 +1,4 @@
+import 'package:Raksha/services/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'SignUp.dart';
 
@@ -67,7 +68,7 @@ class Login extends StatelessWidget {
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
-                    // Add logic for signing in
+                    AuthService().loginUser(context, emailController.text, passwordController.text);
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

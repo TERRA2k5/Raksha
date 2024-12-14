@@ -100,7 +100,7 @@ class _$DetailsDatabase extends DetailsDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `UserDetails` (`id` INTEGER NOT NULL, `age` INTEGER, `height` INTEGER, `weight` INTEGER, `medicalnotes` TEXT, `allergies` TEXT, `medicines` TEXT, `name` TEXT, `DOB` TEXT, `address` TEXT, `bloodgrp` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `EmergencyContacts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `contactName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `EmergencyContacts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `contactName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `isPrimary` INTEGER NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -192,7 +192,8 @@ class _$EmergencyContactsDao extends EmergencyContactsDao {
             (EmergencyContact item) => <String, Object?>{
                   'id': item.id,
                   'contactName': item.contactName,
-                  'phoneNumber': item.phoneNumber
+                  'phoneNumber': item.phoneNumber,
+                  'isPrimary': item.isPrimary ? 1 : 0
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -211,12 +212,24 @@ class _$EmergencyContactsDao extends EmergencyContactsDao {
   }
 
   @override
+  Future<EmergencyContact?> getPrimaryContact() async {
+    return _queryAdapter.query(
+        'SELECT * FROM EmergencyContacts WHERE isPrimary = 1',
+        mapper: (Map<String, Object?> row) => EmergencyContact(
+            row['id'] as int?,
+            row['contactName'] as String,
+            row['phoneNumber'] as String,
+            (row['isPrimary'] as int) != 0));
+  }
+
+  @override
   Future<List<EmergencyContact>> getAllEmergencyContacts() async {
     return _queryAdapter.queryList('SELECT * FROM EmergencyContacts',
         mapper: (Map<String, Object?> row) => EmergencyContact(
             row['id'] as int?,
             row['contactName'] as String,
-            row['phoneNumber'] as String));
+            row['phoneNumber'] as String,
+            (row['isPrimary'] as int) != 0));
   }
 
   @override

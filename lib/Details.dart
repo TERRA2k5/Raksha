@@ -1,10 +1,9 @@
 import 'package:Raksha/HomePage.dart';
-import 'package:Raksha/entity/Database.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'Contacts.dart';
-import 'services/firebase_auth.dart';
 
 class Details extends StatefulWidget {
   @override
@@ -22,7 +21,7 @@ class _DetailState extends State<Details> {
   final addressController = TextEditingController();
   final notesController = TextEditingController();
   String? selectedBlood;
-
+  List<EmergencyContact> contacts = [];
 
   final List<String> bloodTypes = [
     'A+',
@@ -38,15 +37,27 @@ class _DetailState extends State<Details> {
   final FloorRepository repository = FloorRepository();
 
   @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts()async {
+    final fetchContacts = repository.getContacts();
+    contacts = fetchContacts as List<EmergencyContact>;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Raksha'),),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 30),
               const Text(
                 'Personal Details',
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
@@ -161,10 +172,16 @@ class _DetailState extends State<Details> {
                     );
                   } else {
                     repository.insertPerson(name, age, dob, height, weight, address, allergies, medicalnotes, medicines, bloodgrp);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => Contacts()),
-                    );
+                    if(contacts.toString() == "[]"){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Contacts()),
+                      );
+                    }
+                    else{
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (route) => false ,);
+                      // Fluttertoast.showToast(msg: contacts.toString());
+                    }
                   }
                 },
                 child: const Text('Submit'),

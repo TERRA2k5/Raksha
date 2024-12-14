@@ -1,3 +1,4 @@
+import 'package:Raksha/HomePage.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,11 +15,13 @@ class _ContactSatate extends State<Contacts> {
 
   final repository = FloorRepository();
   List<EmergencyContact> contacts = [];
+  EmergencyContact? primaryContact;
 
   @override
   void initState() {
     super.initState();
     _loadContacts();
+    _primaryContact();
   }
 
   Future<void> _loadContacts() async {
@@ -32,12 +35,17 @@ class _ContactSatate extends State<Contacts> {
 
   Future<void> _deleteContact(EmergencyContact contact) async {
     await repository.deleteContact(contact.id);
+    _primaryContact();
+  }
+
+  Future<void> _primaryContact() async {
+    primaryContact =  await repository.getPrimary();
     _loadContacts();
   }
 
-  Future<void> _addContact(String name, String phoneNumber) async {
-    await repository.insertContact(name, phoneNumber);
-    _loadContacts();
+  Future<void> _addContact(String name, String phoneNumber, bool primary) async {
+    await repository.insertContact(name, phoneNumber , primary);
+    _primaryContact();
   }
 
 
@@ -61,13 +69,32 @@ class _ContactSatate extends State<Contacts> {
                  final contact = contacts[index];
                  return Card(
                    child: ListTile(
-                     title: Text(contact.contactName , style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
+                     title: Text(contact.isPrimary ? "${contact.contactName} (Primary)" : contact.contactName , style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
                      subtitle: Text(contact.phoneNumber),
-                     trailing: IconButton(
-                       icon: Icon(Icons.delete, color: Colors.red[900]),
-                       onPressed: () {
-                         _deleteContact(contact);
-                       },
+                     trailing: Row(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         IconButton(
+                           icon: Icon(Icons.delete, color: Colors.red[900]),
+                           onPressed: () {
+                             if(contact.isPrimary){
+                               Fluttertoast.showToast(msg: 'Cannot delete primary contact');
+                             }
+                             else {
+                               _deleteContact(contact);
+                             }
+                           },
+                         ),
+                         IconButton(
+                           icon: Icon(contact.isPrimary ? Icons.star : Icons.star_border, color: Colors.red[900]),
+                           onPressed: () {
+                             _addContact(primaryContact!.contactName, primaryContact!.phoneNumber, false);
+                             _deleteContact(primaryContact!);
+                             _deleteContact(contact);
+                             _addContact(contact.contactName, contact.phoneNumber, true);
+                           },
+                         ),
+                       ],
                      ),
                    ),
                  );
@@ -77,7 +104,16 @@ class _ContactSatate extends State<Contacts> {
               ElevatedButton(onPressed: () {
                 _openDialogBox(context);
                 // Fluttertoast.showToast(msg: contacts[0].contactName.toString());
-              }, child: const Text('Add New'))
+              }, child: const Text('Add New')),
+              const SizedBox(height: 30,),
+              ElevatedButton(onPressed: () {
+                if(primaryContact == null){
+                  Fluttertoast.showToast(msg: 'You must add a contact');
+                }
+                else{
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (route) => false ,);
+                }
+              }, child: const Text('Home'))
             ],
           ),
         ),),
@@ -117,7 +153,12 @@ class _ContactSatate extends State<Contacts> {
 
               if (name.isNotEmpty && phone.isNotEmpty) {
                 if(phone.length == 10){
-                  _addContact(name, phone);
+                  if(primaryContact == null){
+                    _addContact(name, phone, true);
+                  }
+                  else{
+                    _addContact(name, phone, false);
+                  }
                   Navigator.pop(context);
                 }
                 else{
@@ -131,7 +172,7 @@ class _ContactSatate extends State<Contacts> {
                 );
               }
             },
-            child: Text("Save"),
+            child: const Text("Save"),
           ),
         ],
       );

@@ -1,11 +1,14 @@
+import 'package:Raksha/HomePage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+import '../Details.dart';
+
 class AuthService{
 
-  void createUser(String emailAddress,String password,String confPassword, String name) async{
+  void createUser(BuildContext context , String emailAddress,String password,String confPassword, String name) async{
     if(confPassword != password){
       Fluttertoast.showToast(msg: 'Password do not match.');
       return;
@@ -32,8 +35,42 @@ class AuthService{
         .authStateChanges()
         .listen((User? user) {
       if (user != null) {
-        Fluttertoast.showToast(msg: 'Welcome!');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Details()),
+        );
         user.updateDisplayName(name);
+      }
+    });
+  }
+
+  Future<void> loginUser(BuildContext context , String emailAddress , String password) async {
+    if(emailAddress == "" || password == ""){
+      Fluttertoast.showToast(msg: 'All fields are Required.');
+    }
+    else{
+      try {
+        final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: emailAddress,
+            password: password
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'user-not-found') {
+          print('No user found for that email.');
+        } else if (e.code == 'wrong-password') {
+          print('Wrong password provided for that user.');
+        }
+      }
+    }
+
+    FirebaseAuth.instance
+        .authStateChanges()
+        .listen((User? user) {
+      if (user != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()), (route) => false
+        );
       }
     });
   }

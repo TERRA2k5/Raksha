@@ -1,5 +1,4 @@
 import 'package:floor/floor.dart';
-import 'package:flutter/material.dart';
 
 
 @Entity(tableName: 'UserDetails')
@@ -18,6 +17,7 @@ class EmergencyContact {
   final int? id;
   final String contactName;
   final String phoneNumber;
+  final bool isPrimary;
 
-  EmergencyContact(this.id, this.contactName, this.phoneNumber);
+  EmergencyContact(this.id, this.contactName, this.phoneNumber, this.isPrimary);
 }
