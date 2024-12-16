@@ -45,6 +45,7 @@ dependencies:
   background_sms: ^0.0.4
   permission_handler: ^11.3.1
   geolocator: ^13.0.2
+  firebase_database: ^11.2.0
 
 dev_dependencies:
   build_runner: ^2.3.0

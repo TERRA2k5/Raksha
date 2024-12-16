@@ -1,9 +1,11 @@
 import 'package:Raksha/Contacts.dart';
 import 'package:Raksha/Details.dart';
 import 'package:Raksha/entity/Model.dart';
+import 'package:Raksha/repository/FirebaseRepository.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:background_sms/background_sms.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,9 +22,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isCrisisAlertEnabled = false;
   final currentUser = FirebaseAuth.instance.currentUser;
-  int currentIndex = 0;
   // final userName = FirebaseAuth.instance.currentUser?.displayName ?? 'Guest';
   final repository = FloorRepository();
+  final firebaseRepo = FirebaseRepository();
   PersonalDetails? personalData;
   String? alertSMS;
   String? coordinate;
@@ -36,6 +38,14 @@ class _HomePageState extends State<HomePage> {
     _loadPersonalData();
     _primaryContact();
     _requestPermission();
+    _getCrisisState();
+  }
+
+  Future<void> _getCrisisState()async {
+    isCrisisAlertEnabled = await firebaseRepo.getFirebaseStatus();
+    setState(() {
+      isCrisisAlertEnabled;
+    });
   }
 
   Future<void> _requestPermission()async {
@@ -410,6 +420,7 @@ class _HomePageState extends State<HomePage> {
                 Switch(
                   value: isCrisisAlertEnabled,
                   onChanged: (value) {
+                    firebaseRepo.firebaseChangeStatus(value);
                     setState(() {
                       isCrisisAlertEnabled = value; // Update the state
                     });
@@ -446,7 +457,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: Text(
-                      "Share Live Location",
+                      "Share Current Location",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -462,7 +473,7 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: 10),
               _buildInfoText("• Uses Background Location."),
               _buildInfoText(
-                  "• Share your real-time location to your emergency contacts."),
+                  "• Share your current location to your emergency contacts."),
             ],
           ),
         ),
