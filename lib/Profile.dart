@@ -16,16 +16,24 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   FloorRepository repository = FloorRepository();
   PersonalDetails? personalData;
+  List<EmergencyContact>? emergencyContacts;
 
   @override
   void initState() {
     super.initState();
     _loadPersonalData();
+    _getContacts();
   }
 
   Future<void> _loadPersonalData() async {
     personalData = (await repository.getPerson());
     setState(() {});
+  }
+  Future<void> _getContacts() async {
+    emergencyContacts = await repository.getContacts();
+    if(emergencyContacts == null){
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Contacts()), (route) => false);
+    }
   }
 
   @override
@@ -262,6 +270,10 @@ class _ProfileState extends State<Profile> {
                 SizedBox(height: 10,),
                 ElevatedButton(onPressed: () async {
                   await FirebaseAuth.instance.signOut();
+                  repository.deletePerson(1);
+                  for(var contact in emergencyContacts!){
+                    repository.deleteContact(contact.id);
+                  }
                   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Login()), (route)=> false);
                 }, child: Text('Log Out'))
               ],

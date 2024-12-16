@@ -1,8 +1,14 @@
+import 'package:Raksha/Contacts.dart';
+import 'package:Raksha/Details.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
+import 'package:background_sms/background_sms.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'Profile.dart';
 
@@ -18,16 +24,109 @@ class _HomePageState extends State<HomePage> {
   // final userName = FirebaseAuth.instance.currentUser?.displayName ?? 'Guest';
   final repository = FloorRepository();
   PersonalDetails? personalData;
+  String? alertSMS;
+  String? coordinate;
+  EmergencyContact? primaryContact;
+  List<EmergencyContact>? emergencyContacts;
 
   @override
   void initState(){
     super.initState();
+    _getContacts();
     _loadPersonalData();
+    _primaryContact();
+    _requestPermission();
+  }
+
+  Future<void> _requestPermission()async {
+    await Permission.sms.request();
+    await Permission.location.request();
+  }
+  Future<void> _getContacts() async {
+    emergencyContacts = await repository.getContacts();
+    if(emergencyContacts.toString() == "[]"){
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Contacts()), (route) => false);
+    }
+  }
+  Future<void> _primaryContact() async {
+    primaryContact =  await repository.getPrimary();
   }
   Future<void> _loadPersonalData() async {
     personalData = (await repository.getPerson());
-    setState(() {});
+    setState((){
+      personalData;
+    });
+    if(personalData == null){
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Details()), (route) => false);
+    }
   }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+
+    try{
+      await launchUrl(phoneUri);
+    }catch(e){
+      Fluttertoast.showToast(msg: 'Error while calling');
+    }
+  }
+
+
+  Future<void> sendSms(EmergencyContact contact , String message) async {
+    PermissionStatus status = await Permission.sms.request();
+    if(status.isGranted){
+      SmsStatus result = await BackgroundSms.sendMessage(
+          phoneNumber: contact.phoneNumber, message: message);
+      if (result == SmsStatus.sent) {
+        print("Sent");
+        // Fluttertoast.showToast(msg: 'SMS to ${contact.phoneNumber}');
+      } else {
+        print("Failed");
+        Fluttertoast.showToast(msg: 'Failed SMS to ${contact.contactName}');
+      }
+    }
+    else{
+      print('permission');
+      Fluttertoast.showToast(msg: 'SMS Permission Denied');
+    }
+  }
+
+  Future<Position?> _getCurrentLocation() async {
+    try {
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+    } catch (e) {
+      print("Error fetching location: $e");
+      return null;
+    }
+  }
+
+  Future<void> getCoordinateAndSMS() async{
+    PermissionStatus status = await Permission.location.request();
+    // Fluttertoast.showToast(msg: status.toString());
+    if(status.isGranted){
+      Position? position = await _getCurrentLocation();
+      if (position == null) {
+        print("Unable to fetch location.");
+      return;
+      }
+      String coordinate = "https://www.google.com/maps?q=${position.latitude},${position.longitude}";
+      alertSMS = 'This is a automated SMS sent by Raksha,\n${personalData!.name} might be in Emergency.\nLocation: ${coordinate}\nNotes: ${personalData!.medicalnotes}';
+      // Fluttertoast.showToast(msg: alertSMS.toString());
+      for(var contact in emergencyContacts!){
+        sendSms(contact, alertSMS!);
+      }
+    }
+    else{
+      print('permission');
+      Fluttertoast.showToast(msg: 'Location Permission Denied');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +143,7 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: 40),
 
               // Emergency card
-              _buildEmergencyCard(context, personalData?.name.toString() ?? 'Unknown' , personalData?.bloodgrp.toString() ?? 'Unknown', personalData?.medicalnotes.toString() ?? 'Unknown'),
+              _buildEmergencyCard(context, personalData?.name.toString() ?? 'Unknown' , personalData?.bloodgrp.toString() ?? 'Unknown', personalData?.allergies.toString() ?? 'Unknown', personalData?.medicines.toString() ?? 'Unknown', personalData?.medicalnotes.toString() ?? 'Unknown'),
 
               SizedBox(height: 25),
 
@@ -52,11 +151,11 @@ class _HomePageState extends State<HomePage> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildEmergencyCallCard(context, "Call 100"),
+                    child: _buildEmergencyCallCard(context, "100"),
                   ),
                   SizedBox(width: 20),
                   Expanded(
-                    child: _buildEmergencyCallCard(context, "Call 112"),
+                    child: _buildEmergencyCallCard(context, "112"),
                   ),
                 ],
               ),
@@ -67,7 +166,11 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    getCoordinateAndSMS();
+                    // Call
+                    _makePhoneCall(primaryContact!.phoneNumber);
+                  },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 15),
                     backgroundColor: Colors.red,
@@ -128,7 +231,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEmergencyCard(
-      BuildContext context, String userName, String bloodGrp, String notes) {
+      BuildContext context, String userName, String bloodGrp,String allergies, String medicine, String notes) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
@@ -185,6 +288,40 @@ class _HomePageState extends State<HomePage> {
               children: [
                 const Expanded(
                   flex: 1,
+                  child: Text("Allergies: "),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    allergies,
+                    style:
+                    const TextStyle(textBaseline: TextBaseline.alphabetic),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Expanded(
+                  flex: 1,
+                  child: Text("Medicines: "),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    medicine,
+                    style:
+                    const TextStyle(textBaseline: TextBaseline.alphabetic),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Expanded(
+                  flex: 1,
                   child: Text("Medical Notes: "),
                 ),
                 Expanded(
@@ -203,14 +340,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildEmergencyCallCard(BuildContext context, String text) {
+  Widget _buildEmergencyCallCard(BuildContext context, String phone) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
       margin: const EdgeInsets.all(0),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          _makePhoneCall(phone);
+        },
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Row(
@@ -218,7 +357,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               Expanded(
                 child: Text(
-                  text,
+                  "Call $phone",
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 20),
                 ),
@@ -293,40 +432,57 @@ class _HomePageState extends State<HomePage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      margin: EdgeInsets.all(0),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "Share Live Location",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+      margin: const EdgeInsets.all(0),
+      child: InkWell(
+        onTap: (){
+          _buildAlertBox(context);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Share Live Location",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 20,
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            _buildInfoText("• Uses Background Location."),
-            _buildInfoText(
-                "• Share your real-time location to your emergency contacts."),
-          ],
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 20,
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              _buildInfoText("• Uses Background Location."),
+              _buildInfoText(
+                  "• Share your real-time location to your emergency contacts."),
+            ],
+          ),
         ),
-      ),
+      )
     );
   }
-  Future<PersonalDetails?> fetchUser() async {
-    return repository.getPerson();
+
+  Future<void> _buildAlertBox(BuildContext context){
+    return showDialog(context: context, builder: (context){
+      return AlertDialog(
+        title: const Text('This will send Emergency SMS to all Emergency Contact.' , style: TextStyle(fontSize: 15),),
+        actions: [
+          TextButton(onPressed: (){Navigator.pop(context);}, child: const Text('Cancel')),
+          TextButton(onPressed: (){
+            getCoordinateAndSMS();
+            Navigator.pop(context);
+          }, child: const Text('Send'))
+        ],
+      );
+    });
   }
 }
 

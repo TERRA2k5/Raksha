@@ -45,6 +45,7 @@ class _DetailState extends State<Details> {
   Future<void> _loadContacts()async {
     final fetchContacts = repository.getContacts();
     contacts = fetchContacts as List<EmergencyContact>;
+    setState(() {contacts;});
   }
 
   @override
@@ -166,6 +167,7 @@ class _DetailState extends State<Details> {
                       dob.isEmpty ||
                       height.isEmpty ||
                       weight.isEmpty ||
+                      bloodgrp == null ||
                       address.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Please fill required fields')),

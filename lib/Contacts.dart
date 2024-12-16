@@ -88,10 +88,12 @@ class _ContactSatate extends State<Contacts> {
                          IconButton(
                            icon: Icon(contact.isPrimary ? Icons.star : Icons.star_border, color: Colors.red[900]),
                            onPressed: () {
-                             _addContact(primaryContact!.contactName, primaryContact!.phoneNumber, false);
-                             _deleteContact(primaryContact!);
-                             _deleteContact(contact);
-                             _addContact(contact.contactName, contact.phoneNumber, true);
+                             if(!contact.isPrimary){
+                               _addContact(primaryContact!.contactName, primaryContact!.phoneNumber, false);
+                               _deleteContact(primaryContact!);
+                               _deleteContact(contact);
+                               _addContact(contact.contactName, contact.phoneNumber, true);
+                             }
                            },
                          ),
                        ],

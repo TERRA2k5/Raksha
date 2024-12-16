@@ -21,6 +21,9 @@ class FloorRepository{
     try{
       final database = await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
       final personDao = database.userDetailsDao;
+      if(medicalnotes == "") medicalnotes = "None";
+      if(allergies == "") allergies = "None";
+      if(medicines == "") medicines = "None";
       final person = PersonalDetails(1, name, int.parse(age!), DOB, int.parse(height!), int.parse(weight!), address, allergies, medicalnotes, medicines, bloodgrp);
       await personDao.insertOrUpdateUser(person);
     }
@@ -34,11 +37,21 @@ class FloorRepository{
     try {
       final database = await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
       final personDao = database.userDetailsDao;
-      personData = await personDao.getUserDetails(1);  // Await the future
+      personData = await personDao.getUserDetails(1);
       return personData;
     } catch (e) {
       Fluttertoast.showToast(msg: 'Fetching Details Failed $e');
       return null;
+    }
+  }
+
+  Future<void> deletePerson(int? id)async {
+    try{
+      final database = await $FloorDetailsDatabase.databaseBuilder('app_database.db').build();
+      final personDao = database.userDetailsDao;
+      await personDao.deleteUser(1);
+    }catch(e){
+        Fluttertoast.showToast(msg: 'Deleting Details Failed $e');
     }
   }
 
