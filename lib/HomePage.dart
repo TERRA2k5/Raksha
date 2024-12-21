@@ -3,14 +3,17 @@ import 'package:Raksha/Details.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FirebaseRepository.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
+import 'package:Raksha/services/background_task.dart';
 import 'package:background_sms/background_sms.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'Profile.dart';
 
@@ -18,6 +21,24 @@ class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
+
+// void onServiceStart(ServiceInstance service) {
+//   service.on('stopService').listen((event) {
+//     service.stopSelf();
+//   });
+//   try {
+//     Geolocator.getPositionStream(
+//       locationSettings: const LocationSettings(
+//         accuracy: LocationAccuracy.low,
+//         distanceFilter: 10,
+//       ),
+//     ).listen((Position position) async {
+//       FirebaseRepository().firebaseUpdateLocation(position);
+//     });
+//   } catch (e) {
+//     print("Error: $e");
+//   }
+// }
 
 class _HomePageState extends State<HomePage> {
   bool isCrisisAlertEnabled = false;
@@ -41,73 +62,36 @@ class _HomePageState extends State<HomePage> {
     _getCrisisState();
   }
 
-  // void _buildGeolocatorConfig(bool isOpted) async{
-  //   if(isOpted){
-  //     bg.BackgroundGeolocation.ready(bg.Config(
-  //       desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-  //       distanceFilter: 50,
-  //       stopOnTerminate: false,
-  //       startOnBoot: true,
-  //       enableHeadless: true,
-  //       foregroundService: true,
-  //       allowIdenticalLocations: false,
-  //       logLevel: bg.Config.LOG_LEVEL_VERBOSE,
-  //     )).then((bg.State state) {
-  //       if (!state.enabled) {
-  //         bg.BackgroundGeolocation.start();
-  //       }
-  //     });
-  //   }
+  // void initializeService() async {
+  //   final service = FlutterBackgroundService();
+  //   await service.configure(
+  //     androidConfiguration: AndroidConfiguration(
+  //       onStart: onServiceStart,
+  //       isForegroundMode: true,
+  //       autoStart: true,
+  //       notificationChannelId: 'location_service',
+  //       initialNotificationTitle: 'Location Service',
+  //       initialNotificationContent: 'Tracking your location in the background.',
+  //     ),
+  //     iosConfiguration: IosConfiguration(
+  //       onForeground: onServiceStart,
+  //       autoStart: true,
+  //     ),
+  //   );
+  //   service.startService();
   // }
+
+
 
   Future<void> _getCrisisState()async {
     isCrisisAlertEnabled = await firebaseRepo.getFirebaseStatus();
     setState(() {
       isCrisisAlertEnabled;
-      // _buildGeolocatorConfig(isCrisisAlertEnabled);
+      // if(isCrisisAlertEnabled){
+      //   Background_task().runCrisisAlert(currentUser!.uid);
+      // }
     });
   }
-
-  // void setupLocationListener(String userId) {
-  //   bg.BackgroundGeolocation.onLocation((bg.Location location) {
-  //     // Extract latitude and longitude
-  //     double latitude = location.coords.latitude;
-  //     double longitude = location.coords.longitude;
-  //
-  //     FirebaseDatabase.instance.ref('Locations').child(userId).update({
-  //       'location': {'latitude': latitude, 'longitude': longitude},
-  //     }).then((_) {
-  //       print("Location updated: $latitude, $longitude");
-  //     }).catchError((e) {
-  //       print("Error updating location: $e");
-  //     });
-  //   });
-  //
-  //   bg.BackgroundGeolocation.onMotionChange((bg.Location location) {
-  //     print("Motion changed to: ${location.coords}");
-  //   });
-  // }
-
-  // void startTracking(String userId) {
-  //   // Initialize location listener
-  //   setupLocationListener(userId);
-  //
-  //   // Start the background location service
-  //   bg.BackgroundGeolocation.start().then((_) {
-  //     print("Background location tracking started.");
-  //   }).catchError((e) {
-  //     print("Error starting location tracking: $e");
-  //   });
-  // }
-  //
-  // void stopTracking() {
-  //   // Stop background location service
-  //   bg.BackgroundGeolocation.stop().then((_) {
-  //     print("Background location tracking stopped.");
-  //   }).catchError((e) {
-  //     print("Error stopping location tracking: $e");
-  //   });
-  // }
 
 
   Future<void> _requestPermission()async {
@@ -481,15 +465,16 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Switch(
                   value: isCrisisAlertEnabled,
-                  onChanged: (value) {
-                    // if(currentUser != null){
-                    //   if(value){
-                    //     startTracking(currentUser!.uid);
-                    //   }
-                    //   else{
-                    //     stopTracking();
-                    //   }
-                    // }
+                  onChanged: (value) async {
+                    PermissionStatus permission = await Permission.locationAlways.request();
+                    if(value && permission.isGranted){
+                      Background_task().runCrisisAlert(currentUser!.uid);
+                    }
+                    else{
+                      value = false;
+                      Workmanager().cancelByUniqueName("emergencyAlertTask");
+                      print('All tasks cancelled');
+                    }
                     firebaseRepo.firebaseChangeStatus(value);
                     setState(() {
                       isCrisisAlertEnabled = value;

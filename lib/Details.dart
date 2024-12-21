@@ -43,9 +43,12 @@ class _DetailState extends State<Details> {
   }
 
   Future<void> _loadContacts()async {
-    final fetchContacts = repository.getContacts();
-    contacts = fetchContacts as List<EmergencyContact>;
-    setState(() {contacts;});
+    final fetchContacts = await repository.getContacts();
+    if(fetchContacts != null ) {
+      setState(() {
+        contacts = fetchContacts;
+      });
+    }
   }
 
   @override
