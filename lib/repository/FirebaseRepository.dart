@@ -12,11 +12,54 @@ import 'package:workmanager/workmanager.dart';
 
 final currentUser = FirebaseAuth.instance.currentUser;
 
-class FirebaseRepository{
+class FirebaseRepository {
+  Future<void> uploadDateTime(String url, String token) async {
+    if (currentUser != null) {
+      DatabaseReference dbRef = FirebaseDatabase.instance.ref(token);
+      int currentTime = DateTime.now().millisecondsSinceEpoch;
+      await dbRef.update({"uploaded_time": currentTime, "url": url});
+      print("Timestamp uploaded: $currentTime");
+    }
+  }
+  Future<String?> getUrl(String token) async {
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref(token);
 
-  Future<void> firebaseChangeStatus(bool state)async {
-    if(currentUser != null){
-      DatabaseReference ref = FirebaseDatabase.instance.ref("users").child(currentUser!.uid);
+    DataSnapshot snapshot = await dbRef.get();
+    if (snapshot.exists) {
+      String url = snapshot.child("url").value.toString();
+      return url;
+    }
+    return null;
+  }
+
+  Future<bool> checkIf30MinPassed(String token) async {
+    DatabaseReference dbRef = FirebaseDatabase.instance.ref(token);
+
+    DataSnapshot snapshot = await dbRef.get();
+    if (snapshot.exists) {
+      int uploadedTime = snapshot.child("uploaded_time").value as int;
+      int currentTime = DateTime.now().millisecondsSinceEpoch;
+
+      int differenceInMinutes = (currentTime - uploadedTime) ~/ (1000 * 60);
+
+      if (differenceInMinutes <= 30) {
+        print("Less than 30 minutes have passed.");
+        return true;
+      } else {
+
+        print("More than 30 minutes have passed.");
+      }
+    } else {
+      print("No timestamp found!");
+    }
+
+    return false;
+  }
+
+  Future<void> firebaseChangeStatus(bool state) async {
+    if (currentUser != null) {
+      DatabaseReference ref =
+          FirebaseDatabase.instance.ref("users").child(currentUser!.uid);
       await ref.update({
         "status": state,
       });
@@ -24,22 +67,23 @@ class FirebaseRepository{
   }
 
   Future<bool> getFirebaseStatus() async {
-    DatabaseReference ref = FirebaseDatabase.instance.ref("users").child(currentUser!.uid);
+    DatabaseReference ref =
+        FirebaseDatabase.instance.ref("users").child(currentUser!.uid);
     bool result = false;
     final snapshot = await ref.child('status').get();
     // Fluttertoast.showToast(msg: snapshot.value.toString());
-    if(snapshot.value.toString() == "true"){
+    if (snapshot.value.toString() == "true") {
       result = true;
     }
     return result;
   }
 
-
-  Future<void> firebaseUpdateLocation(Position position)async {
-    if(currentUser != null){
-      DatabaseReference ref = FirebaseDatabase.instance.ref("users").child(currentUser!.uid);
+  Future<void> firebaseUpdateLocation(Position position) async {
+    if (currentUser != null) {
+      DatabaseReference ref =
+          FirebaseDatabase.instance.ref("users").child(currentUser!.uid);
       String token = await NotificationServices().getToken();
-      print(token);
+      // print(token);
       await ref.update({
         "token": token,
         "time": ServerValue.timestamp,
@@ -49,7 +93,7 @@ class FirebaseRepository{
     }
   }
 
-  Future<List<String>> getNearbyUsers(Position myPosition) async {
+  Future<List<String>> getNearbyUsers(Position myPosition, String url) async {
     List<String> fcmTokens = [];
     String myToken = await NotificationServices().getToken();
     DatabaseReference ref = FirebaseDatabase.instance.ref("users");
@@ -62,15 +106,19 @@ class FirebaseRepository{
         String lon = value['longitude'];
         String token = value['token'];
         bool isEnable = value['status'];
-        print("lat is $lat");
+        // print("lat is $lat");
         // Calculate distance
-        if(isEnable){
+        if (isEnable) {
           double distance = calculateDistance(
-              myPosition.latitude, myPosition.longitude, double.tryParse(lat)!, double.tryParse(lon)!);
+              myPosition.latitude,
+              myPosition.longitude,
+              double.tryParse(lat)!,
+              double.tryParse(lon)!);
 
           if (distance <= 5 && myToken != token) {
             fcmTokens.add(token);
-            print(token);
+            uploadDateTime(url,token);
+            print('added');
           }
         }
       });

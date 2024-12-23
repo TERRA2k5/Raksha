@@ -48,7 +48,7 @@ class NotificationServices {
   Future<void> sendNotification(Position myPosition , String coordinate)async {
     String accessToken = await NotificationServices().getAccessToken();
     print("token is $accessToken");
-    List<String> users = await firebaseRepo.getNearbyUsers(myPosition);
+    List<String> users = await firebaseRepo.getNearbyUsers(myPosition,coordinate);
 
     try{
       for(var token in users){

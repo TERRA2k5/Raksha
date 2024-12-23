@@ -25,9 +25,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isCrisisAlertEnabled = false;
   final currentUser = FirebaseAuth.instance.currentUser;
+  bool isVisible = false;
   // final userName = FirebaseAuth.instance.currentUser?.displayName ?? 'Guest';
   final repository = FloorRepository();
   final firebaseRepo = FirebaseRepository();
+  String? url;
+  String? token;
   PersonalDetails? personalData;
   String? alertSMS;
   String? coordinate;
@@ -35,7 +38,7 @@ class _HomePageState extends State<HomePage> {
   List<EmergencyContact>? emergencyContacts;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     NotificationServices().firebaseNotificationInit(context);
     NotificationServices().setupInteractMessage(context);
@@ -44,49 +47,71 @@ class _HomePageState extends State<HomePage> {
     _primaryContact();
     _requestPermission();
     _getCrisisState();
+    initTokenAndUrl();
     // NotificationServices().getToken();
   }
 
+  Future<void> initTokenAndUrl() async {
+      token = await NotificationServices().getToken();
+    if (await firebaseRepo.checkIf30MinPassed(token!)) {
+        url = await firebaseRepo.getUrl(token!);
+    }
 
-  Future<void> _getCrisisState()async {
+    if (url != null && url != "") {
+      setState(() {
+        isVisible = true;
+        token = token;
+        url = url;
+      });
+    }
+  }
+
+  Future<void> _getCrisisState() async {
     bool isEnable = await firebaseRepo.getFirebaseStatus();
-    if(isEnable){
+    if (isEnable) {
       bool permission1 = await Permission.locationAlways.isDenied;
       bool permission2 = await Permission.notification.isDenied;
-      if(permission1 || permission2){
+      if (permission1 || permission2) {
         isEnable = false;
         firebaseRepo.firebaseChangeStatus(false);
         await Workmanager().cancelByUniqueName("emergencyAlertTask");
         Fluttertoast.showToast(msg: 'Crisis Alert turned off');
       }
     }
-    setState((){
+    setState(() {
       isCrisisAlertEnabled = isEnable;
     });
   }
 
 
-  Future<void> _requestPermission()async {
+  Future<void> _requestPermission() async {
     await Permission.sms.request();
     await Permission.location.request();
     await Permission.notification.request();
   }
+
   Future<void> _getContacts() async {
     emergencyContacts = await repository.getContacts();
-    if(emergencyContacts.toString() == "[]"){
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Contacts()), (route) => false);
+    if (emergencyContacts.toString() == "[]") {
+      Navigator.pushAndRemoveUntil(
+          context, MaterialPageRoute(builder: (context) => Contacts()), (
+          route) => false);
     }
   }
+
   Future<void> _primaryContact() async {
-    primaryContact =  await repository.getPrimary();
+    primaryContact = await repository.getPrimary();
   }
+
   Future<void> _loadPersonalData() async {
     personalData = (await repository.getPerson());
-    setState((){
+    setState(() {
       personalData;
     });
-    if(personalData == null){
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Details()), (route) => false);
+    if (personalData == null) {
+      Navigator.pushAndRemoveUntil(
+          context, MaterialPageRoute(builder: (context) => Details()), (
+          route) => false);
     }
   }
 
@@ -96,28 +121,28 @@ class _HomePageState extends State<HomePage> {
       path: phoneNumber,
     );
 
-    try{
+    try {
       await launchUrl(phoneUri);
-    }catch(e){
+    } catch (e) {
       Fluttertoast.showToast(msg: 'Error while calling');
     }
   }
 
 
-  Future<void> sendSms(EmergencyContact contact , String message) async {
+  Future<void> sendSms(EmergencyContact contact, String message) async {
     PermissionStatus status = await Permission.sms.request();
-    if(status.isGranted){
+    if (status.isGranted) {
       SmsStatus result = await BackgroundSms.sendMessage(
           phoneNumber: contact.phoneNumber, message: message);
       if (result == SmsStatus.sent) {
-        print("Sent");
+        print("Sent SMS");
         // Fluttertoast.showToast(msg: 'SMS to ${contact.phoneNumber}');
       } else {
         print("Failed");
         Fluttertoast.showToast(msg: 'Failed SMS to ${contact.contactName}');
       }
     }
-    else{
+    else {
       print('permission');
       Fluttertoast.showToast(msg: 'SMS Permission Denied');
     }
@@ -134,30 +159,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> getCoordinateAndSMS() async{
+  Future<void> getCoordinateAndSMS() async {
     PermissionStatus status = await Permission.location.request();
     // Fluttertoast.showToast(msg: status.toString());
-    if(status.isGranted){
+    if (status.isGranted) {
       Position? position = await _getCurrentLocation();
       if (position == null) {
         print("Unable to fetch location.");
-      return;
+        return;
       }
-      String coordinate = "https://www.google.com/maps?q=${position.latitude},${position.longitude}";
-      alertSMS = 'This is a automated SMS sent by Raksha,\n${personalData!.name} might be in Emergency.\nLocation: ${coordinate}\nNotes: ${personalData!.medicalnotes}';
+      String coordinate = "https://www.google.com/maps?q=${position
+          .latitude},${position.longitude}";
+      alertSMS = 'This is a automated SMS sent by Raksha,\n${personalData!
+          .name} might be in Emergency.\nLocation: ${coordinate}\nNotes: ${personalData!
+          .medicalnotes}';
       // Fluttertoast.showToast(msg: alertSMS.toString());
-      for(var contact in emergencyContacts!){
+      for (var contact in emergencyContacts!) {
         sendSms(contact, alertSMS!);
       }
-      NotificationServices().sendNotification(position , coordinate);
+      NotificationServices().sendNotification(position, coordinate);
     }
-    else{
+    else {
       print('permission');
       Fluttertoast.showToast(msg: 'Location Permission Denied');
     }
   }
-
-
 
 
   @override
@@ -172,10 +198,17 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 40),
+              SizedBox(height: 10),
+              _buildEmergencyNotification(context, url),
+              SizedBox(height: 25),
 
               // Emergency card
-              _buildEmergencyCard(context, personalData?.name.toString() ?? 'Unknown' , personalData?.bloodgrp.toString() ?? 'Unknown', personalData?.allergies.toString() ?? 'Unknown', personalData?.medicines.toString() ?? 'Unknown', personalData?.medicalnotes.toString() ?? 'Unknown'),
+              _buildEmergencyCard(
+                  context, personalData?.name.toString() ?? 'Unknown',
+                  personalData?.bloodgrp.toString() ?? 'Unknown',
+                  personalData?.allergies.toString() ?? 'Unknown',
+                  personalData?.medicines.toString() ?? 'Unknown',
+                  personalData?.medicalnotes.toString() ?? 'Unknown'),
 
               SizedBox(height: 25),
 
@@ -244,13 +277,13 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         backgroundColor: Colors.grey[200],
-        onTap: (index){
-            if(index != 0){
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => Profile()),
-              );
-            }
+        onTap: (index) {
+          if (index != 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Profile()),
+            );
+          }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
@@ -260,8 +293,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildEmergencyCard(
-      BuildContext context, String userName, String bloodGrp,String allergies, String medicine, String notes) {
+  Widget _buildEmergencyCard(BuildContext context, String userName,
+      String bloodGrp, String allergies, String medicine, String notes) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
@@ -440,11 +473,14 @@ class _HomePageState extends State<HomePage> {
                 Switch(
                   value: isCrisisAlertEnabled,
                   onChanged: (value) async {
-                    PermissionStatus permission1 = await Permission.locationAlways.request();
-                    PermissionStatus permission2 = await Permission.notification.request();
+                    PermissionStatus permission1 = await Permission
+                        .locationAlways.request();
+                    PermissionStatus permission2 = await Permission.notification
+                        .request();
                     if (permission1.isPermanentlyDenied) {
                       value = false;
-                      Fluttertoast.showToast(msg: 'Enable Allow Location at All Time.');
+                      Fluttertoast.showToast(
+                          msg: 'Enable Allow Location at All Time.');
                       await openAppSettings();
                     }
                     if (permission2.isPermanentlyDenied) {
@@ -452,12 +488,13 @@ class _HomePageState extends State<HomePage> {
                       Fluttertoast.showToast(msg: 'Enable Notification.');
                       await openAppSettings();
                     }
-                    if(value && permission1.isGranted){
+                    if (value && permission1.isGranted) {
                       Background_task().runCrisisAlert(currentUser!.uid);
                     }
-                    else{
+                    else {
                       value = false;
-                      await Workmanager().cancelByUniqueName("emergencyAlertTask");
+                      await Workmanager().cancelByUniqueName(
+                          "emergencyAlertTask");
                       print('All tasks cancelled');
                     }
                     firebaseRepo.firebaseChangeStatus(value);
@@ -480,54 +517,95 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildLiveLocationCard() {
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      margin: const EdgeInsets.all(0),
-      child: InkWell(
-        onTap: (){
-          _buildAlertBox(context);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Share Current Location",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        margin: const EdgeInsets.all(0),
+        child: InkWell(
+          onTap: () {
+            _buildAlertBox(context);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Share Current Location",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 20,
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              _buildInfoText("• Uses Background Location."),
-              _buildInfoText(
-                  "• Share your current location to your emergency contacts."),
-            ],
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 20,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                _buildInfoText("• Uses Background Location."),
+                _buildInfoText(
+                    "• Share your current location to your emergency contacts."),
+              ],
+            ),
           ),
-        ),
-      )
+        )
     );
   }
 
-  Future<void> _buildAlertBox(BuildContext context){
-    return showDialog(context: context, builder: (context){
+  Widget _buildEmergencyNotification(BuildContext context, String? url) {
+    return Visibility(visible: isVisible,child: SizedBox(
+      width: double.infinity,
+      child: Card(
+
+        color: Colors.red[900],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        margin: const EdgeInsets.all(0),
+        child: InkWell(
+          onTap: () async {
+            try{
+              if (url.toString() == '') {
+                print('No URL found in the message');
+                return;
+              }
+              Uri? uri = Uri.tryParse(url.toString());
+              if (uri == null) {
+                print('Invalid or unlaunchable URL: $url');
+                return;
+              }
+
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } catch (e) {
+              print('Error handling message: $e');
+            }
+          },
+          child: const Padding(padding: EdgeInsets.all(20.0),
+              child: Row(children: [Expanded(child: Text('Emergency Nearby!!' , style: TextStyle(color: Colors.white),),flex: 2,),
+              Expanded(child: Icon(Icons.navigate_next, color: Colors.white,),flex: 1)])),
+        ),
+      ),
+    )
+    );
+  }
+
+  Future<void> _buildAlertBox(BuildContext context) {
+    return showDialog(context: context, builder: (context) {
       return AlertDialog(
-        title: const Text('This will send Emergency SMS to all Emergency Contact.' , style: TextStyle(fontSize: 15),),
+        title: const Text(
+          'This will send Emergency SMS to all Emergency Contact.',
+          style: TextStyle(fontSize: 15),),
         actions: [
-          TextButton(onPressed: (){Navigator.pop(context);}, child: const Text('Cancel')),
-          TextButton(onPressed: (){
+          TextButton(onPressed: () {
+            Navigator.pop(context);
+          }, child: const Text('Cancel')),
+          TextButton(onPressed: () {
             getCoordinateAndSMS();
             Navigator.pop(context);
           }, child: const Text('Send'))
