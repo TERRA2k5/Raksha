@@ -36,6 +36,7 @@ Future<void> callbackDispatcher() async {
   });
 }
 
+@pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message)async {
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp();

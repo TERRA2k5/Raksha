@@ -43,7 +43,7 @@ class FirebaseRepository{
       await ref.update({
         "token": token,
         "time": ServerValue.timestamp,
-        "latitute": position.latitude.toString(),
+        "latitude": position.latitude.toString(),
         "longitude": position.longitude.toString(),
       });
     }
@@ -51,22 +51,27 @@ class FirebaseRepository{
 
   Future<List<String>> getNearbyUsers(Position myPosition) async {
     List<String> fcmTokens = [];
+    String myToken = await NotificationServices().getToken();
     DatabaseReference ref = FirebaseDatabase.instance.ref("users");
     final snapshot = await ref.get();
     if (snapshot.exists) {
       Map<dynamic, dynamic> users = snapshot.value as Map<dynamic, dynamic>;
 
       users.forEach((key, value) {
-        double lat = double.parse(value['latitude'].toString());
-        double lon = double.parse(value['longitude'].toString());
+        String lat = value['latitude'];
+        String lon = value['longitude'];
         String token = value['token'];
-
+        bool isEnable = value['status'];
+        print("lat is $lat");
         // Calculate distance
-        double distance = calculateDistance(
-            myPosition.latitude, myPosition.longitude, lat, lon);
+        if(isEnable){
+          double distance = calculateDistance(
+              myPosition.latitude, myPosition.longitude, double.tryParse(lat)!, double.tryParse(lon)!);
 
-        if (distance <= 5) {
-          fcmTokens.add(token);
+          if (distance <= 5 && myToken != token) {
+            fcmTokens.add(token);
+            print(token);
+          }
         }
       });
     }

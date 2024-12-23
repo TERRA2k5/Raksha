@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
       for(var contact in emergencyContacts!){
         sendSms(contact, alertSMS!);
       }
-      sendNotification(position);
+      NotificationServices().sendNotification(position , coordinate);
     }
     else{
       print('permission');
@@ -157,10 +157,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> sendNotification(Position myPosition)async {
 
-    List<String> users = await firebaseRepo.getNearbyUsers(myPosition);
-  }
 
 
   @override

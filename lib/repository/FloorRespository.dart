@@ -41,6 +41,8 @@ class FloorRepository{
       return personData;
     } catch (e) {
       Fluttertoast.showToast(msg: 'Fetching Details Failed $e');
+      print('Fetching Details Failed $e');
+      Fluttertoast.showToast(msg: 'Fetching Details Failed');
       return null;
     }
   }
@@ -51,7 +53,8 @@ class FloorRepository{
       final personDao = database.userDetailsDao;
       await personDao.deleteUser(1);
     }catch(e){
-        Fluttertoast.showToast(msg: 'Deleting Details Failed $e');
+        print('Deleting Details Failed $e');
+        Fluttertoast.showToast(msg: 'Deleting Details Failed');
     }
   }
 
@@ -68,6 +71,7 @@ class FloorRepository{
       await contactDAO.insertEmergencyContact(contact);
     }
     catch (e) {
+      print('Saving Contact Failed');
       Fluttertoast.showToast(msg: 'Saving Contact Failed $e');
     }
   }
@@ -80,7 +84,8 @@ class FloorRepository{
       contacts = await contactDAO.getAllEmergencyContacts();
       return contacts;
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Fetching Details Failed $e');
+      print('Fetching Details Failed $e');
+      Fluttertoast.showToast(msg: 'Fetching Details Failed');
       return [];
     }
   }
@@ -93,7 +98,9 @@ class FloorRepository{
       return primaryContact;
     }
     catch(e){
-      Fluttertoast.showToast(msg: 'Fetching Primary Failed $e');
+      Fluttertoast.showToast(msg: 'Fetching Primary Failed');
+      print('Fetching Primary Failed $e');
+
       return null;
     }
   }
@@ -106,7 +113,8 @@ class FloorRepository{
 
       await contactDao.deleteContact(id!);
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error deleting contact $e');
+      print('Error deleting contact');
+      Fluttertoast.showToast(msg: 'Error deleting contact');
     }
   }
 }
