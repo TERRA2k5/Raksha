@@ -4,6 +4,7 @@ import 'package:Raksha/Profile.dart';
 import 'package:Raksha/repository/FirebaseRepository.dart';
 import 'package:Raksha/services/background_task.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -21,10 +22,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   Workmanager().initialize(
     callbackDispatcher,
-    isInDebugMode: true,
+    isInDebugMode: false,
   );
 
   if (FirebaseAuth.instance.currentUser != null) {

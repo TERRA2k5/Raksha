@@ -1,8 +1,10 @@
 import 'dart:math';
 
+import 'package:Raksha/services/NotificationServices.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
@@ -34,6 +36,12 @@ Future<void> callbackDispatcher() async {
   });
 }
 
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message)async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
+  // NotificationServices().showNotification(message);
+}
 
 class Background_task {
   Future<void> runCrisisAlert(String uid) async {

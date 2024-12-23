@@ -3,12 +3,12 @@ import 'package:Raksha/Details.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FirebaseRepository.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
+import 'package:Raksha/services/NotificationServices.dart';
 import 'package:Raksha/services/background_task.dart';
 import 'package:background_sms/background_sms.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,24 +21,6 @@ class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
-
-// void onServiceStart(ServiceInstance service) {
-//   service.on('stopService').listen((event) {
-//     service.stopSelf();
-//   });
-//   try {
-//     Geolocator.getPositionStream(
-//       locationSettings: const LocationSettings(
-//         accuracy: LocationAccuracy.low,
-//         distanceFilter: 10,
-//       ),
-//     ).listen((Position position) async {
-//       FirebaseRepository().firebaseUpdateLocation(position);
-//     });
-//   } catch (e) {
-//     print("Error: $e");
-//   }
-// }
 
 class _HomePageState extends State<HomePage> {
   bool isCrisisAlertEnabled = false;
@@ -55,41 +37,31 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState(){
     super.initState();
+    NotificationServices().firebaseNotificationInit(context);
+    NotificationServices().setupInteractMessage(context);
     _getContacts();
     _loadPersonalData();
     _primaryContact();
     _requestPermission();
     _getCrisisState();
+    // NotificationServices().getToken();
   }
-
-  // void initializeService() async {
-  //   final service = FlutterBackgroundService();
-  //   await service.configure(
-  //     androidConfiguration: AndroidConfiguration(
-  //       onStart: onServiceStart,
-  //       isForegroundMode: true,
-  //       autoStart: true,
-  //       notificationChannelId: 'location_service',
-  //       initialNotificationTitle: 'Location Service',
-  //       initialNotificationContent: 'Tracking your location in the background.',
-  //     ),
-  //     iosConfiguration: IosConfiguration(
-  //       onForeground: onServiceStart,
-  //       autoStart: true,
-  //     ),
-  //   );
-  //   service.startService();
-  // }
-
 
 
   Future<void> _getCrisisState()async {
-    isCrisisAlertEnabled = await firebaseRepo.getFirebaseStatus();
-    setState(() {
-      isCrisisAlertEnabled;
-      // if(isCrisisAlertEnabled){
-      //   Background_task().runCrisisAlert(currentUser!.uid);
-      // }
+    bool isEnable = await firebaseRepo.getFirebaseStatus();
+    if(isEnable){
+      bool permission1 = await Permission.locationAlways.isDenied;
+      bool permission2 = await Permission.notification.isDenied;
+      if(permission1 || permission2){
+        isEnable = false;
+        firebaseRepo.firebaseChangeStatus(false);
+        await Workmanager().cancelByUniqueName("emergencyAlertTask");
+        Fluttertoast.showToast(msg: 'Crisis Alert turned off');
+      }
+    }
+    setState((){
+      isCrisisAlertEnabled = isEnable;
     });
   }
 
@@ -97,6 +69,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _requestPermission()async {
     await Permission.sms.request();
     await Permission.location.request();
+    await Permission.notification.request();
   }
   Future<void> _getContacts() async {
     emergencyContacts = await repository.getContacts();
@@ -176,11 +149,17 @@ class _HomePageState extends State<HomePage> {
       for(var contact in emergencyContacts!){
         sendSms(contact, alertSMS!);
       }
+      sendNotification(position);
     }
     else{
       print('permission');
       Fluttertoast.showToast(msg: 'Location Permission Denied');
     }
+  }
+
+  Future<void> sendNotification(Position myPosition)async {
+
+    List<String> users = await firebaseRepo.getNearbyUsers(myPosition);
   }
 
 
@@ -254,12 +233,10 @@ class _HomePageState extends State<HomePage> {
 
               SizedBox(height: 25),
 
-              // Crisis Alert Card with toggle switch
               _buildCrisisAlertCard(),
 
               SizedBox(height: 25),
 
-              // Share Live Location Card
               _buildLiveLocationCard(),
 
               SizedBox(height: 60),
@@ -466,13 +443,24 @@ class _HomePageState extends State<HomePage> {
                 Switch(
                   value: isCrisisAlertEnabled,
                   onChanged: (value) async {
-                    PermissionStatus permission = await Permission.locationAlways.request();
-                    if(value && permission.isGranted){
+                    PermissionStatus permission1 = await Permission.locationAlways.request();
+                    PermissionStatus permission2 = await Permission.notification.request();
+                    if (permission1.isPermanentlyDenied) {
+                      value = false;
+                      Fluttertoast.showToast(msg: 'Enable Allow Location at All Time.');
+                      await openAppSettings();
+                    }
+                    if (permission2.isPermanentlyDenied) {
+                      value = false;
+                      Fluttertoast.showToast(msg: 'Enable Notification.');
+                      await openAppSettings();
+                    }
+                    if(value && permission1.isGranted){
                       Background_task().runCrisisAlert(currentUser!.uid);
                     }
                     else{
                       value = false;
-                      Workmanager().cancelByUniqueName("emergencyAlertTask");
+                      await Workmanager().cancelByUniqueName("emergencyAlertTask");
                       print('All tasks cancelled');
                     }
                     firebaseRepo.firebaseChangeStatus(value);
