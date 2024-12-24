@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
     _primaryContact();
     _requestPermission();
     _getCrisisState();
-    initTokenAndUrl();
+
     // NotificationServices().getToken();
   }
 
@@ -77,6 +77,7 @@ class _HomePageState extends State<HomePage> {
         await Workmanager().cancelByUniqueName("emergencyAlertTask");
         Fluttertoast.showToast(msg: 'Crisis Alert turned off');
       }
+      initTokenAndUrl();
     }
     setState(() {
       isCrisisAlertEnabled = isEnable;
