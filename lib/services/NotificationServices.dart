@@ -18,6 +18,7 @@ class NotificationServices {
 
 
   Future<void> sendNotification(Position myPosition , String coordinate)async {
+    // FirebaseAccessToken() is not on github
     String accessToken = await FirebaseAccessToken().getAccessToken();
     print("token is $accessToken");
     List<String> users = await firebaseRepo.getNearbyUsers(myPosition,coordinate);

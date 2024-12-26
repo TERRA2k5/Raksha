@@ -166,7 +166,7 @@ class _HomePageState extends State<HomePage> {
     if (status.isGranted) {
       Position? position = await _getCurrentLocation();
       if (position == null) {
-        print("Unable to fetch location.");
+        Fluttertoast.showToast(msg: "Enable Location.");
         return;
       }
       String coordinate = "https://www.google.com/maps?q=${position
@@ -233,6 +233,18 @@ class _HomePageState extends State<HomePage> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
+                    PermissionStatus statusLocation = await Permission.location.request();
+                    PermissionStatus statusSMS = await Permission.sms.request();
+                    if(statusLocation.isDenied || statusLocation.isPermanentlyDenied){
+                      Fluttertoast.showToast(msg: "Enable Location & SMS Permission.");
+                      await openAppSettings();
+                      return;
+                    }
+                    if(statusSMS.isDenied || statusSMS.isPermanentlyDenied){
+                      Fluttertoast.showToast(msg: "Enable Location & SMS Permission.");
+                      await openAppSettings();
+                      return;
+                    }
                     getCoordinateAndSMS();
                     // Call
                     _makePhoneCall(primaryContact!.phoneNumber);
@@ -478,7 +490,7 @@ class _HomePageState extends State<HomePage> {
                         .locationAlways.request();
                     PermissionStatus permission2 = await Permission.notification
                         .request();
-                    if (permission1.isPermanentlyDenied) {
+                    if (permission1.isPermanentlyDenied || permission1.isDenied) {
                       value = false;
                       Fluttertoast.showToast(
                           msg: 'Enable Allow Location at All Time.');
@@ -489,7 +501,19 @@ class _HomePageState extends State<HomePage> {
                       Fluttertoast.showToast(msg: 'Enable Notification.');
                       await openAppSettings();
                     }
+                    else if(permission2.isDenied){
+                      value = false;
+                      await Permission.notification.request();
+                    }
                     if (value && permission1.isGranted) {
+                      Position? position = await _getCurrentLocation();
+                      if(position == null){
+                        setState(() {
+                          isCrisisAlertEnabled = false;
+                        });
+                        Fluttertoast.showToast(msg: 'Enable Location.');
+                        return;
+                      }
                       Background_task().runCrisisAlert(currentUser!.uid);
                     }
                     else {
@@ -549,7 +573,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 SizedBox(height: 10),
-                _buildInfoText("• Uses Background Location."),
+                _buildInfoText("• Sends SMS to all Emergency Contacts."),
                 _buildInfoText(
                     "• Share your current location to your emergency contacts."),
               ],
