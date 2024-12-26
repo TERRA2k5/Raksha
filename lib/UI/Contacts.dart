@@ -1,4 +1,3 @@
-import 'package:Raksha/HomePage.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:flutter/cupertino.dart';
@@ -6,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../MainContainer.dart';
 
 class Contacts extends StatefulWidget {
 
@@ -141,7 +142,7 @@ class _ContactSatate extends State<Contacts> {
                   Fluttertoast.showToast(msg: 'You must add a contact');
                 }
                 else{
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (route) => false ,);
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainContainer()), (route) => false ,);
                 }
               }, child: const Text('Home'))
             ],
@@ -149,65 +150,6 @@ class _ContactSatate extends State<Contacts> {
         ),),
     );
   }
-
-  // Future<void> _openDialogBox(BuildContext context) {
-  //   final TextEditingController nameController = TextEditingController();
-  //   final TextEditingController phoneController = TextEditingController();
-  //
-  //   return showDialog(context: context, builder: (context) {
-  //     return AlertDialog(title: const Text('Emergency Contact'),
-  //       content: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         mainAxisSize: MainAxisSize.min,
-  //         children: [
-  //           TextField(
-  //             controller: nameController,
-  //             decoration: const InputDecoration(labelText: "Name"),
-  //           ),
-  //           TextField(
-  //             controller: phoneController,
-  //             decoration: const InputDecoration(labelText: "Phone Number"),
-  //             keyboardType: TextInputType.phone,
-  //           ),
-  //         ],
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.pop(context),
-  //           child: Text("Cancel"),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             final name = nameController.text;
-  //             final phone = phoneController.text;
-  //
-  //             if (name.isNotEmpty && phone.isNotEmpty) {
-  //               if(phone.length == 10){
-  //                 if(primaryContact == null){
-  //                   _addContact(name, phone, true);
-  //                 }
-  //                 else{
-  //                   _addContact(name, phone, false);
-  //                 }
-  //                 Navigator.pop(context);
-  //               }
-  //               else{
-  //                 ScaffoldMessenger.of(context).showSnackBar(
-  //                   const SnackBar(content: Text("Enter valid phone number.")),
-  //                 );
-  //               }
-  //             } else {
-  //               ScaffoldMessenger.of(context).showSnackBar(
-  //                 const SnackBar(content: Text("Please fill all fields")),
-  //               );
-  //             }
-  //           },
-  //           child: const Text("Save"),
-  //         ),
-  //       ],
-  //     );
-  //   });
-  // }
 
 }
 

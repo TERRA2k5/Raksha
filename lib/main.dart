@@ -1,19 +1,14 @@
-import 'package:Raksha/Contacts.dart';
-import 'package:Raksha/Details.dart';
-import 'package:Raksha/Profile.dart';
+import 'package:Raksha/MainContainer.dart';
 import 'package:Raksha/repository/FirebaseRepository.dart';
 import 'package:Raksha/services/background_task.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
-import 'HomePage.dart';
-import 'Login.dart';
-import 'SignUp.dart';
+import 'UI/Login.dart';
 import 'services/firebase_options.dart';
 
 void main() async {
@@ -68,7 +63,7 @@ class AuthHandler extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          return HomePage();
+          return const MainContainer();
         }
         return const Login();
         // return Profile();

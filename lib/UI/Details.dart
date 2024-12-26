@@ -1,9 +1,9 @@
-import 'package:Raksha/HomePage.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'Contacts.dart';
+import '../MainContainer.dart';
 
 class Details extends StatefulWidget {
   @override
@@ -184,7 +184,7 @@ class _DetailState extends State<Details> {
                       );
                     }
                     else{
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (route) => false ,);
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MainContainer()), (route) => false ,);
                       // Fluttertoast.showToast(msg: contacts.toString());
                     }
                   }

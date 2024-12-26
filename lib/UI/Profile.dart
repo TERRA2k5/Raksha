@@ -1,12 +1,11 @@
-import 'package:Raksha/Contacts.dart';
-import 'package:Raksha/Details.dart';
-import 'package:Raksha/HomePage.dart';
-import 'package:Raksha/Login.dart';
+import 'package:Raksha/UI/Contacts.dart';
+import 'package:Raksha/UI/Details.dart';
+import 'package:Raksha/UI/Login.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'entity/Model.dart';
+import '../entity/Model.dart';
 
 class Profile extends StatefulWidget {
   @override
@@ -280,22 +279,6 @@ class _ProfileState extends State<Profile> {
             ),
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        backgroundColor: Colors.grey[200],
-        onTap: (index) {
-          if (index != 1) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => HomePage()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile")
-        ],
       ),
     );
   }

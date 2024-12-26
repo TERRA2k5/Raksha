@@ -1,10 +1,10 @@
-import 'package:Raksha/HomePage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import '../Details.dart';
+import '../UI/Details.dart';
+import '../MainContainer.dart';
 
 class AuthService{
 
@@ -69,7 +69,7 @@ class AuthService{
       if (user != null) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()), (route) => false
+          MaterialPageRoute(builder: (context) => MainContainer()), (route) => false
         );
       }
     });

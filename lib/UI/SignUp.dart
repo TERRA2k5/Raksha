@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/firebase_auth.dart';
+import '../services/firebase_auth.dart';
 import 'Login.dart';
 import 'Details.dart';
 

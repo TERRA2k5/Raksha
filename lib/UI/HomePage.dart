@@ -1,5 +1,5 @@
-import 'package:Raksha/Contacts.dart';
-import 'package:Raksha/Details.dart';
+import 'package:Raksha/UI/Contacts.dart';
+import 'package:Raksha/UI/Details.dart';
 import 'package:Raksha/entity/Model.dart';
 import 'package:Raksha/repository/FirebaseRepository.dart';
 import 'package:Raksha/repository/FloorRespository.dart';
@@ -287,22 +287,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        backgroundColor: Colors.grey[200],
-        onTap: (index) {
-          if (index != 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => Profile()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile")
-        ],
-      ),
+
     );
   }
 
@@ -486,6 +471,11 @@ class _HomePageState extends State<HomePage> {
                 Switch(
                   value: isCrisisAlertEnabled,
                   onChanged: (value) async {
+                    if(value){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Processing Crisis Alert")),
+                      );
+                    }
                     PermissionStatus permission1 = await Permission
                         .locationAlways.request();
                     PermissionStatus permission2 = await Permission.notification
