@@ -12,7 +12,6 @@ Raksha is a Flutter-based mobile application designed to help users in emergenci
 3. [Usage](#usage)
 4. [Contributing](#contributing)
 5. [License](#license)
-6. [Contact](#contact)
 
 ---
 
